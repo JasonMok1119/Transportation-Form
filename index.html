@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交通費申報系統 Transportation Form</title>
+    <style>
+        /* 全局深色主題 */
+        body {
+            font-family: 'Segoe UI', Arial, "Microsoft JhengHei", sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            display: block;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .form-container {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 650px;
+            margin: 20px auto;
+            border: 1px solid #3a3a3a;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            border-bottom: 2px solid #444;
+            padding-bottom: 15px;
+            color: #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .row-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 20px;
+        }
+
+        .row-table td {
+            padding: 0;
+            vertical-align: top;
+        }
+
+        .row-table td:first-child {
+            padding-right: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #cccccc;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            color: #ffffff;
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            border-color: #2196F3;
+            outline: none;
+        }
+
+        .hint-text {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            background-color: #0b7dda;
+        }
+
+        /* 圖片預覽貨架 */
+        .preview-container {
+            display: block;
+            text-align: left;
+            margin-top: 15px;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px dashed #444;
+            min-height: 50px;
+        }
+
+        .preview-wrapper {
+            display: inline-block;
+            margin: 6px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .preview-image {
+            display: block;
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #555;
+        }
+
+        .img-info {
+            font-size: 10px;
+            color: #888;
+            margin-top: 4px;
+            max-width: 90px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* ==========================================
+           列印與另存 PDF 專用樣式 (@media print)
+           ========================================== */
+        @page {
+            size: A4;
+            margin: 15mm 12mm 15mm 12mm; /* 控制 PDF 內頁邊距，並輔助隱藏瀏覽器頁首頁尾 */
+        }
+
+        @media print {
+            body {
+                background-color: #ffffff;
+                color: #000000;
+                padding: 0;
+            }
+
+            .form-container {
+                background-color: #ffffff;
+                box-shadow: none;
+                border: none;
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+
+            h2 {
+                color: #1a365d;
+                border-bottom: 2px solid #1a365d;
+                font-size: 20pt;
+            }
+
+            /* 隱藏輸入框邊框，在 PDF 中呈現乾淨的文本視覺 */
+            input[type="text"], input[type="number"], select {
+                border: none;
+                background: transparent;
+                color: #000000;
+                padding: 0;
+                font-size: 12pt;
+                appearance: none;
+                -webkit-appearance: none;
+            }
+
+            label {
+                color: #333333;
+                margin-bottom: 4px;
+                font-size: 11pt;
+            }
+
+            /* 列印時隱藏不需要的網頁元素 */
+            .btn-submit, input[type="file"], .hint-text, .img-info, .sort-group {
+                display: none;
+            }
+
+            .preview-container {
+                border: none;
+                background: transparent;
+                padding: 0;
+                margin-top: 25px;
+            }
+
+            /* PDF 圖片排版優化：2欄並排，整齊好看 */
+            .preview-wrapper {
+                display: inline-block;
+                width: 47%;
+                margin: 1.5%;
+                page-break-inside: avoid; /* 防止單張相片被跨頁裁切 */
+            }
+
+            .preview-image {
+                width: 100%;
+                height: auto;
+                max-height: 105mm;
+                object-fit: contain;
+                border: 1px solid #ddd;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>
+            交通費申報表<br>
+            <span style="font-size: 15px; color: #aaa; font-weight: normal;">Transportation Expense Report</span>
+        </h2>
+
+        <form id="transportForm">
+            <div class="form-group">
+                <label for="name">員工姓名 Name:</label>
+                <input type="text" id="name" required placeholder="例如: Mok Kam Wing" value="Mok Kam Wing">
+            </div>
+
+            <table class="row-table">
+                <tr>
+                    <td>
+                        <div class="form-group">
+                            <label for="year">填交年份 Year:</label>
+                            <input type="number" id="year" required placeholder="例如: 2026" value="2026">
+                        </div>
+                    </td>
+                    <td>
+                        <div class="form-group">
+                            <label for="month">填交月份 Month:</label>
+                            <select id="month" required>
+                                <option value="1">1月</option>
+                                <option value="2">2月</option>
+                                <option value="3">3月</option>
+                                <option value="4">4月</option>
+                                <option value="5" selected>5月</option>
+                                <option value="6">6月</option>
+                                <option value="7">7月</option>
+                                <option value="8">8月</option>
+                                <option value="9">9月</option>
+                                <option value="10">10月</option>
+                                <option value="11">11月</option>
+                                <option value="12">12月</option>
+                            </select>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="form-group">
+                <label for="amount">總金額 Total Amount (HK$):</label>
+                <input type="number" id="amount" step="0.1" required placeholder="例如: 376.8" value="376.8">
+            </div>
+
+            <div class="form-group sort-group">
+                <label for="sortOrder">🔄 相片排序方式 Photo Order:</label>
+                <select id="sortOrder">
+                    <option value="date" selected>依拍攝/修改日期 (由第一天至最後一天)</option>
+                    <option value="name">依檔案名稱 (A-Z 排序)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="photos">上傳每日交通費相片 Upload Receipts:</label>
+                <input type="file" id="photos" accept="image/*" multiple>
+                <span class="hint-text">💡 提示：可同時選取約 30 張相片，系統會自動按第一天到最後一天排列。</span>
+                
+                <div class="preview-container" id="previewContainer"></div>
+            </div>
+
+            <button type="submit" class="btn-submit">匯出 PDF 報告 / 列印</button>
+        </form>
+    </div>
+
+    <script>
+        const photoInput = document.getElementById('photos');
+        const sortOrderSelect = document.getElementById('sortOrder');
+        const previewContainer = document.getElementById('previewContainer');
+        
+        let selectedFiles = [];
+
+        photoInput.addEventListener('change', function() {
+            selectedFiles = this.files ? Array.from(this.files) : [];
+            processAndRenderImages();
+        });
+
+        sortOrderSelect.addEventListener('change', function() {
+            if (selectedFiles.length > 0) {
+                processAndRenderImages();
+            }
+        });
+
+        function processAndRenderImages() {
+            previewContainer.innerHTML = '';
+            let filesToSort = [...selectedFiles];
+
+            if (sortOrderSelect.value === 'date') {
+                filesToSort.sort((a, b) => a.lastModified - b.lastModified);
+            } else if (sortOrderSelect.value === 'name') {
+                filesToSort.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+            }
+
+            filesToSort.forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const wrapper = document.createElement('div');
+                        wrapper.classList.add('preview-wrapper');
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.classList.add('preview-image');
+                        
+                        const info = document.createElement('div');
+                        info.classList.add('img-info');
+                        if (sortOrderSelect.value === 'date') {
+                            const dateObj = new Date(file.lastModified);
+                            info.innerText = `#${index + 1} (${dateObj.getMonth()+1}/${dateObj.getDate()})`;
+                        } else {
+                            info.innerText = `#${index + 1} ${file.name}`;
+                        }
+                        
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(info);
+                        previewContainer.appendChild(wrapper);
+                    }
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        document.getElementById('transportForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            window.print();
+        });
+    </script>
+</body>
+</html>
