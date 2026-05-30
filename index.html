@@ -83,9 +83,10 @@
 
         .hint-text {
             font-size: 12px;
-            color: #aaa;
-            margin-top: 4px;
+            color: #4CAF50;
+            margin-top: 6px;
             display: block;
+            font-weight: bold;
         }
 
         .btn-submit {
@@ -106,7 +107,7 @@
             background-color: #0b7dda;
         }
 
-        /* 圖片預覽貨架 */
+        /* 圖片預覽貨架 (支援拖曳) */
         .preview-container {
             display: block;
             text-align: left;
@@ -123,6 +124,17 @@
             margin: 6px;
             text-align: center;
             vertical-align: top;
+            cursor: grab; /* 提示使用者可以拖曳 */
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .preview-wrapper:active {
+            cursor: grabbing; /* 拖曳時的滑鼠狀態 */
+        }
+
+        .preview-wrapper.dragging {
+            opacity: 0.4;
+            transform: scale(0.95);
         }
 
         .preview-image {
@@ -132,12 +144,17 @@
             object-fit: cover;
             border-radius: 4px;
             border: 1px solid #555;
+            pointer-events: none; /* 防止圖片本身干擾拖曳事件 */
         }
 
         .img-info {
-            font-size: 10px;
-            color: #888;
-            margin-top: 4px;
+            font-size: 11px;
+            color: #fff;
+            background-color: #2196F3;
+            border-radius: 10px;
+            padding: 2px 6px;
+            margin-top: 6px;
+            display: inline-block;
             max-width: 90px;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -149,7 +166,7 @@
            ========================================== */
         @page {
             size: A4;
-            margin: 15mm 12mm 15mm 12mm; /* 控制 PDF 內頁邊距，並輔助隱藏瀏覽器頁首頁尾 */
+            margin: 15mm 12mm 15mm 12mm;
         }
 
         @media print {
@@ -174,7 +191,6 @@
                 font-size: 20pt;
             }
 
-            /* 隱藏輸入框邊框，在 PDF 中呈現乾淨的文本視覺 */
             input[type="text"], input[type="number"], select {
                 border: none;
                 background: transparent;
@@ -191,8 +207,7 @@
                 font-size: 11pt;
             }
 
-            /* 列印時隱藏不需要的網頁元素 */
-            .btn-submit, input[type="file"], .hint-text, .img-info, .sort-group {
+            .btn-submit, input[type="file"], .hint-text, .img-info {
                 display: none;
             }
 
@@ -203,12 +218,11 @@
                 margin-top: 25px;
             }
 
-            /* PDF 圖片排版優化：2欄並排，整齊好看 */
             .preview-wrapper {
                 display: inline-block;
                 width: 47%;
                 margin: 1.5%;
-                page-break-inside: avoid; /* 防止單張相片被跨頁裁切 */
+                page-break-inside: avoid;
             }
 
             .preview-image {
@@ -271,18 +285,10 @@
                 <input type="number" id="amount" step="0.1" required placeholder="例如: 376.8" value="376.8">
             </div>
 
-            <div class="form-group sort-group">
-                <label for="sortOrder">🔄 相片排序方式 Photo Order:</label>
-                <select id="sortOrder">
-                    <option value="date" selected>依拍攝/修改日期 (由第一天至最後一天)</option>
-                    <option value="name">依檔案名稱 (A-Z 排序)</option>
-                </select>
-            </div>
-
             <div class="form-group">
                 <label for="photos">上傳每日交通費相片 Upload Receipts:</label>
                 <input type="file" id="photos" accept="image/*" multiple>
-                <span class="hint-text">💡 提示：可同時選取約 30 張相片，系統會自動按第一天到最後一天排列。</span>
+                <span class="hint-text">✨ 提示：上傳相片後，可直接「用滑鼠按住相片拖曳」來自定義排列順序！</span>
                 
                 <div class="preview-container" id="previewContainer"></div>
             </div>
@@ -293,39 +299,26 @@
 
     <script>
         const photoInput = document.getElementById('photos');
-        const sortOrderSelect = document.getElementById('sortOrder');
         const previewContainer = document.getElementById('previewContainer');
-        
-        let selectedFiles = [];
+        let draggedNode = null; // 用於記錄當前被拖曳的圖片
 
+        // 監聽相片上傳
         photoInput.addEventListener('change', function() {
-            selectedFiles = this.files ? Array.from(this.files) : [];
-            processAndRenderImages();
-        });
-
-        sortOrderSelect.addEventListener('change', function() {
-            if (selectedFiles.length > 0) {
-                processAndRenderImages();
-            }
-        });
-
-        function processAndRenderImages() {
             previewContainer.innerHTML = '';
-            let filesToSort = [...selectedFiles];
+            const files = this.files ? Array.from(this.files) : [];
 
-            if (sortOrderSelect.value === 'date') {
-                filesToSort.sort((a, b) => a.lastModified - b.lastModified);
-            } else if (sortOrderSelect.value === 'name') {
-                filesToSort.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
-            }
-
-            filesToSort.forEach((file, index) => {
+            files.forEach((file) => {
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     
                     reader.onload = function(e) {
                         const wrapper = document.createElement('div');
                         wrapper.classList.add('preview-wrapper');
+                        wrapper.draggable = true; // 啟用 HTML5 拖曳功能
+                        
+                        // 讀取相片的日期作為輔助辨識
+                        const dateObj = new Date(file.lastModified);
+                        wrapper.dataset.dateText = `${dateObj.getMonth()+1}/${dateObj.getDate()}`;
                         
                         const img = document.createElement('img');
                         img.src = e.target.result;
@@ -333,23 +326,58 @@
                         
                         const info = document.createElement('div');
                         info.classList.add('img-info');
-                        if (sortOrderSelect.value === 'date') {
-                            const dateObj = new Date(file.lastModified);
-                            info.innerText = `#${index + 1} (${dateObj.getMonth()+1}/${dateObj.getDate()})`;
-                        } else {
-                            info.innerText = `#${index + 1} ${file.name}`;
-                        }
                         
                         wrapper.appendChild(img);
                         wrapper.appendChild(info);
                         previewContainer.appendChild(wrapper);
+
+                        // --- 拖曳事件綁定 ---
+                        wrapper.addEventListener('dragstart', (ev) => {
+                            draggedNode = wrapper;
+                            setTimeout(() => wrapper.classList.add('dragging'), 0);
+                        });
+
+                        wrapper.addEventListener('dragend', () => {
+                            wrapper.classList.remove('dragging');
+                            draggedNode = null;
+                            updateOrderNumbers(); // 拖曳結束後更新序號
+                        });
+
+                        wrapper.addEventListener('dragover', (ev) => {
+                            ev.preventDefault(); // 必須阻止預設行為才能觸發放置
+                            if (wrapper === draggedNode || !draggedNode) return;
+                            
+                            // 判斷滑鼠在圖片的左半邊還是右半邊，決定插入位置
+                            const rect = wrapper.getBoundingClientRect();
+                            const isAfter = (ev.clientX - rect.left) / (rect.right - rect.left) > 0.5;
+                            
+                            if (isAfter && wrapper.nextSibling) {
+                                previewContainer.insertBefore(draggedNode, wrapper.nextSibling);
+                            } else {
+                                previewContainer.insertBefore(draggedNode, wrapper);
+                            }
+                        });
+
+                        // 每次新增圖片後更新一次整體序號
+                        updateOrderNumbers();
                     }
-                    
                     reader.readAsDataURL(file);
+                }
+            });
+        });
+
+        // 更新圖片下方的「順序 #1」標籤
+        function updateOrderNumbers() {
+            const wrappers = previewContainer.querySelectorAll('.preview-wrapper');
+            wrappers.forEach((wrap, index) => {
+                const infoBox = wrap.querySelector('.img-info');
+                if (infoBox) {
+                    infoBox.innerText = `#${index + 1} (${wrap.dataset.dateText})`;
                 }
             });
         }
 
+        // 喚醒列印介面
         document.getElementById('transportForm').addEventListener('submit', function(e) {
             e.preventDefault();
             window.print();
