@@ -125,17 +125,17 @@
             margin: 6px;
             text-align: center;
             vertical-align: top;
-            cursor: pointer; /* 滑鼠變成手指，提示可點擊 */
+            cursor: pointer; 
             transition: transform 0.2s, opacity 0.2s;
             position: relative;
         }
         
         .preview-wrapper:hover {
-            transform: scale(1.05); /* 滑鼠懸停時微放大提示 */
+            transform: scale(1.05); 
         }
         
         .preview-wrapper:active {
-            cursor: grabbing; /* 拖曳時的滑鼠狀態 */
+            cursor: grabbing; 
         }
 
         .preview-wrapper.dragging {
@@ -143,25 +143,27 @@
             transform: scale(0.95);
         }
 
+        /* 調整縮圖顯示方式，保證不裁切並放大尺寸 */
         .preview-image {
             display: block;
-            width: 90px;
-            height: 90px;
-            object-fit: cover;
+            width: 140px;      /* 放大寬度 */
+            height: 140px;     /* 放大高度 */
+            object-fit: contain; /* 改為 contain，完整顯示不裁切 */
+            background-color: #222; /* 加入深色底色，讓不同比例的圖片更好看 */
             border-radius: 4px;
             border: 1px solid #555;
-            pointer-events: none; /* 防止圖片本身干擾拖曳事件 */
+            pointer-events: none; 
         }
 
         .img-info {
-            font-size: 11px;
+            font-size: 12px;
             color: #fff;
             background-color: #2196F3;
             border-radius: 10px;
-            padding: 2px 6px;
+            padding: 3px 8px;
             margin-top: 6px;
             display: inline-block;
-            max-width: 90px;
+            max-width: 140px; /* 對齊放大後的圖片寬度 */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -171,14 +173,14 @@
            放大預覽視窗 (Modal) 樣式
            ========================================== */
         .modal {
-            display: none; /* 預設隱藏 */
+            display: none; 
             position: fixed;
             z-index: 9999;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.85); /* 半透明黑底 */
+            background-color: rgba(0, 0, 0, 0.85); 
             backdrop-filter: blur(5px);
         }
 
@@ -254,7 +256,6 @@
                 font-size: 11pt;
             }
 
-            /* 列印時隱藏多餘按鈕、提示與放大視窗 */
             .btn-submit, input[type="file"], .hint-text, .img-info, .modal {
                 display: none !important;
             }
@@ -280,6 +281,7 @@
                 object-fit: contain;
                 border: 1px solid #ddd;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                background-color: transparent; /* 列印時去除底色 */
             }
         }
     </style>
@@ -361,9 +363,8 @@
         const closeModal = document.getElementById('closeModal');
         
         let draggedNode = null; 
-        let isDraggingAction = false; // 用來區分是「點擊」還是「拖曳」
+        let isDraggingAction = false; 
 
-        // 監聽相片上傳
         photoInput.addEventListener('change', function() {
             previewContainer.innerHTML = '';
             const files = this.files ? Array.from(this.files) : [];
@@ -391,9 +392,8 @@
                         wrapper.appendChild(info);
                         previewContainer.appendChild(wrapper);
 
-                        // --- 拖曳與點擊事件綁定 ---
                         wrapper.addEventListener('dragstart', (ev) => {
-                            isDraggingAction = true; // 標記目前正在拖曳
+                            isDraggingAction = true; 
                             draggedNode = wrapper;
                             setTimeout(() => wrapper.classList.add('dragging'), 0);
                         });
@@ -402,7 +402,6 @@
                             wrapper.classList.remove('dragging');
                             draggedNode = null;
                             updateOrderNumbers(); 
-                            // 延遲解除拖曳狀態，避免觸發點擊放大
                             setTimeout(() => { isDraggingAction = false; }, 50); 
                         });
 
@@ -420,9 +419,8 @@
                             }
                         });
 
-                        // 點擊放大事件
                         wrapper.addEventListener('click', () => {
-                            if (!isDraggingAction) { // 只有在不是拖曳的情況下，才放大圖片
+                            if (!isDraggingAction) { 
                                 modal.style.display = "block";
                                 modalImg.src = img.src;
                             }
@@ -435,19 +433,16 @@
             });
         });
 
-        // 關閉 Modal 的設定
         closeModal.addEventListener('click', () => {
             modal.style.display = "none";
         });
         
-        // 點擊 Modal 黑底區域也可以關閉
         window.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.display = "none";
             }
         });
 
-        // 更新圖片下方的標籤
         function updateOrderNumbers() {
             const wrappers = previewContainer.querySelectorAll('.preview-wrapper');
             wrappers.forEach((wrap, index) => {
@@ -458,7 +453,6 @@
             });
         }
 
-        // 喚醒列印介面
         document.getElementById('transportForm').addEventListener('submit', function(e) {
             e.preventDefault();
             window.print();
